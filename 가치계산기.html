@@ -1,0 +1,278 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10종 통합 금융 계산기</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        /* 메인 탭 */
+        .tab-nav {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #dee2e6;
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            padding: 10px 15px;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            font-size: 1em;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: -2px;
+            border-bottom: 2px solid transparent;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .tab-button:hover { color: #0056b3; }
+        .tab-button.active {
+            color: #007bff;
+            border-bottom-color: #007bff;
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        
+        /* 서브 탭 (대출한도용) */
+        .sub-tab-nav {
+            display: flex; background-color: #e9ecef; border-radius: 5px;
+            padding: 5px; margin-bottom: 20px;
+        }
+        .sub-tab-button {
+            flex: 1; text-align: center; padding: 8px; border-radius: 5px; cursor: pointer; border: none;
+            background-color: transparent; font-weight: 500; transition: background-color 0.3s, color 0.3s;
+        }
+        .sub-tab-button.active {
+            background-color: #ffffff; color: #007bff; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .sub-tab-panel { display: none; }
+        .sub-tab-panel.active { display: block; }
+
+        .calculator { padding-top: 10px; }
+        h2 { font-size: 1.2em; color: #0056b3; margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; }
+        input[type="number"], input[type="date"], select {
+            width: calc(100% - 24px); padding: 10px; border: 1px solid #ccc;
+            border-radius: 5px; font-size: 1em; box-sizing: content-box;
+        }
+        select { width: 100%; }
+        button {
+            width: 100%; padding: 12px; background-color: #007bff; color: white;
+            border: none; border-radius: 5px; font-size: 1.1em; cursor: pointer;
+            transition: background-color 0.3s; margin-top: 10px;
+        }
+        button:hover { background-color: #0056b3; }
+        
+        /* 동적 행 추가/삭제 버튼 */
+        .action-button {
+            background-color: #6c757d; font-size: 0.9em; padding: 8px 12px; margin-top: 0;
+        }
+        .remove-row-btn {
+            background-color: #dc3545; color: white; border: none; border-radius: 50%;
+            width: 28px; height: 28px; font-size: 1em; line-height: 1;
+            cursor: pointer; transition: background-color 0.2s;
+        }
+        .remove-row-btn:hover { background-color: #c82333; }
+        .salary-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .salary-row label { flex: 0 0 100px; }
+        .salary-row input { flex-grow: 1; }
+
+        .result {
+            margin-top: 20px; padding: 15px; background-color: #e9f5ff;
+            border-left: 5px solid #007bff; color: #333; word-break: keep-all; line-height: 1.6;
+        }
+        .result strong { font-size: 1.1em; }
+        .result .final-result { font-size: 1.2em; text-align: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ccc; }
+        .result .shortfall { color: #dc3545; }
+        .result .surplus { color: #28a745; }
+        .result-section { margin-top: 15px; padding-top:15px; border-top: 1px dashed #007bff; }
+        .result-section:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+        small { display: block; margin-top: 5px; color: #6c757d; }
+        .final-info {
+            margin-top: 25px; padding: 15px; background-color: #fffbe6;
+            border: 1px solid #ffe58f; border-radius: 5px; font-size: 0.95em; color: #856404;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>10종 통합 금융 계산기</h1>
+
+    <div class="tab-nav">
+        <button class="tab-button" onclick="openTab(event, 'retirement')">은퇴자금</button>
+        <button class="tab-button" onclick="openTab(event, 'severance')">퇴직금</button>
+        <button class="tab-button" onclick="openTab(event, 'salary-rate')">연봉상승률</button>
+        <button class="tab-button" onclick="openTab(event, 'savings')">적금</button>
+        <button class="tab-button" onclick="openTab(event, 'deposit')">예금</button>
+        <button class="tab-button" onclick="openTab(event, 'loan')">대출한도</button>
+        <button class="tab-button" onclick="openTab(event, 'value')">가치계산</button>
+    </div>
+    
+    <div id="salary-rate" class="tab-panel">
+         <div class="calculator">
+            <h2>연봉 상승률 계산기 (CAGR)</h2>
+            <div id="salary-rows-container">
+                </div>
+            <button class="action-button" onclick="addSalaryRow()">+ 연도 추가</button>
+            <button onclick="calculateSalaryIncreaseRate()">평균 상승률 계산</button>
+            <div class="result" id="salary-rate-result"></div>
+            <div class="final-info">
+                <strong>연평균 성장률(CAGR)이란?</strong><br>
+                여러 해에 걸친 성장률을 매년 동일한 비율로 성장했다고 가정하여 계산한 값입니다. 단순 산술평균보다 정확한 평균 성장률을 나타냅니다.
+            </div>
+        </div>
+    </div>
+    
+    <div id="retirement" class="tab-panel"></div>
+    <div id="severance" class="tab-panel"></div>
+    <div id="savings" class="tab-panel"></div>
+    <div id="deposit" class="tab-panel"></div>
+    <div id="loan" class="tab-panel"></div>
+    <div id="value" class="tab-panel"></div>
+</div>
+
+<script>
+    // --- 초기화 및 탭 스크립트 ---
+    document.addEventListener('DOMContentLoaded', function() {
+        fillStaticHTML();
+        initSalaryRows(); // 연봉 상승률 계산기 초기화
+        document.querySelector('.tab-button').click(); // 첫 번째 메인 탭 열기
+    });
+
+    function openTab(evt, tabName) {
+        let i, tabPanels, tabButtons;
+        tabPanels = document.getElementsByClassName("tab-panel");
+        for (i = 0; i < tabPanels.length; i++) { tabPanels[i].style.display = "none"; }
+        tabButtons = document.getElementsByClassName("tab-button");
+        for (i = 0; i < tabButtons.length; i++) { tabButtons[i].classList.remove("active"); }
+
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.classList.add("active");
+
+        if (tabName === 'loan') { if (!document.querySelector('.sub-tab-button.active')) { document.querySelector('.sub-tab-button').click(); } }
+    }
+    
+    function openLoanTab(evt, loanTypeName) {
+        let i, subTabPanels, subTabButtons;
+        subTabPanels = document.getElementsByClassName("sub-tab-panel");
+        for (i = 0; i < subTabPanels.length; i++) { subTabPanels[i].style.display = "none"; }
+        subTabButtons = document.getElementsByClassName("sub-tab-button");
+        for (i = 0; i < subTabButtons.length; i++) { subTabButtons[i].classList.remove("active"); }
+        document.getElementById(loanTypeName).style.display = "block";
+        evt.currentTarget.classList.add("active");
+    }
+
+    // --- 연봉 상승률 계산기 스크립트 ---
+    function initSalaryRows() {
+        addSalaryRow();
+        addSalaryRow();
+    }
+    
+    function addSalaryRow() {
+        const container = document.getElementById('salary-rows-container');
+        const rowCount = container.getElementsByClassName('salary-row').length;
+        const newRow = document.createElement('div');
+        newRow.className = 'salary-row';
+        newRow.innerHTML = `
+            <label for="salary-year-${rowCount + 1}">${rowCount + 1}년차 연봉</label>
+            <input type="number" id="salary-year-${rowCount + 1}" placeholder="예: 40000000">
+            <button class="remove-row-btn" onclick="removeSalaryRow(this)">-</button>
+        `;
+        container.appendChild(newRow);
+        updateRemoveButtons();
+    }
+
+    function removeSalaryRow(button) {
+        button.parentElement.remove();
+        updateSalaryRowLabels();
+        updateRemoveButtons();
+    }
+
+    function updateSalaryRowLabels() {
+        const rows = document.getElementById('salary-rows-container').getElementsByClassName('salary-row');
+        for (let i = 0; i < rows.length; i++) {
+            rows[i].querySelector('label').textContent = `${i + 1}년차 연봉`;
+            rows[i].querySelector('label').htmlFor = `salary-year-${i + 1}`;
+            rows[i].querySelector('input').id = `salary-year-${i + 1}`;
+        }
+    }
+    
+    function updateRemoveButtons() {
+        const rows = document.getElementById('salary-rows-container').getElementsByClassName('salary-row');
+        // 최소 2개의 행은 삭제 불가
+        if (rows.length <= 2) {
+            for(let row of rows) { row.querySelector('.remove-row-btn').style.display = 'none'; }
+        } else {
+            for(let row of rows) { row.querySelector('.remove-row-btn').style.display = 'inline-block'; }
+        }
+    }
+    
+    function calculateSalaryIncreaseRate() {
+        const inputs = document.querySelectorAll('#salary-rows-container input[type="number"]');
+        const salaries = Array.from(inputs).map(input => parseFloat(input.value));
+        const resultDiv = document.getElementById('salary-rate-result');
+
+        if (salaries.length < 2 || salaries.some(isNaN) || salaries.some(s => s <= 0)) {
+            resultDiv.innerHTML = "2개 이상의 유효한 연봉을 입력해주세요.";
+            return;
+        }
+
+        const beginningValue = salaries[0];
+        const endingValue = salaries[salaries.length - 1];
+        const numberOfPeriods = salaries.length - 1;
+
+        const cagr = (Math.pow(endingValue / beginningValue, 1 / numberOfPeriods) - 1) * 100;
+        
+        resultDiv.innerHTML = `총 ${numberOfPeriods + 1}년간의 연평균 상승률(CAGR)은<br><strong style="font-size:1.3em;">약 ${cagr.toFixed(2)}%</strong> 입니다.`;
+    }
+
+    // --- 계산 함수들 ---
+    const formatNumber = (num) => Math.round(num).toLocaleString('ko-KR');
+    const ERROR_MESSAGE = "올바른 값을 모두 입력해주세요.";
+    const TAX_RATE = 0.154;
+
+    // --- 이하 기존 계산기 함수 및 HTML 삽입 스크립트 (Minified) ---
+    function fillStaticHTML(){document.getElementById("retirement").innerHTML=`<h2>은퇴자금 계산기</h2><div class="form-grid"><div class="form-group"><label for="current-age">현재 나이</label><input type="number" id="current-age" placeholder="30"></div><div class="form-group"><label for="retirement-age">은퇴 나이</label><input type="number" id="retirement-age" placeholder="65"></div></div><div class="form-group"><label for="life-expectancy">기대수명</label><input type="number" id="life-expectancy" placeholder="95"></div><div class="form-group"><label for="monthly-living-cost">은퇴 후 월 생활비 (현재가치 기준, 원)</label><input type="number" id="monthly-living-cost" placeholder="3000000"></div><div class="form-group"><label for="current-assets">현재 보유 자산 (원)</label><input type="number" id="current-assets" placeholder="100000000"></div><div class="form-group"><label for="annual-savings">연 저축 금액 (원)</label><input type="number" id="annual-savings" placeholder="20000000"></div><div class="form-grid"><div class="form-group"><label for="investment-return-rate">연 목표수익률 (%)</label><input type="number" id="investment-return-rate" placeholder="6"></div><div class="form-group"><label for="inflation-rate">연평균 인플레이션 (%)</label><input type="number" id="inflation-rate" placeholder="2.5"></div></div><button onclick="calculateRetirement()">계산하기</button><div class="result" id="retirement-result"></div>`;document.getElementById("severance").innerHTML=`<h2>예상 퇴직금 계산기 (DB/DC)</h2><div class="form-grid"><div class="form-group"><label for="start-date">입사일</label><input type="date" id="start-date"></div><div class="form-group"><label for="end-date">예상 퇴사일</label><input type="date" id="end-date"></div></div><div class="form-group"><label for="current-salary">현재 연봉 (원)</label><input type="number" id="current-salary" placeholder="50000000"></div><div class="form-group"><label for="salary-increase-rate-sev">평균 연봉상승률 (%)</label><input type="number" id="salary-increase-rate-sev" placeholder="4"></div><div class="form-group"><label for="unused-leave-days">퇴직 직전 1년간 미사용 연차 (일)</label><input type="number" id="unused-leave-days" placeholder="10" value="0"><small>DB형 계산 시 연차수당이 평균임금에 반영됩니다.</small></div><div class="form-group"><label for="dc-return-rate">DC형 계좌 연평균 수익률 (%)</label><input type="number" id="dc-return-rate" placeholder="5"><small>DC형은 투자 수익률에 따라 결과가 크게 달라집니다.</small></div><button onclick="calculateSeverance()">계산하기</button><div class="result" id="severance-result"></div>`;document.getElementById("savings").innerHTML=`<h2>적금 계산기</h2><div class="form-group"><label for="monthly-deposit">월 납입액 (원)</label><input type="number" id="monthly-deposit" placeholder="예: 300000"></div><div class="form-group"><label for="savings-period">예치 기간 (개월)</label><input type="number" id="savings-period" placeholder="예: 12"></div><div class="form-group"><label for="savings-rate">연 이자율 (%)</label><input type="number" id="savings-rate" placeholder="예: 3.5"></div><div class="form-group"><label for="savings-tax">이자 과세</label><select id="savings-tax"><option value="general">일반과세 (15.4%)</option><option value="exempt">비과세 (0%)</option></select></div><button onclick="calculateSavings()">계산하기</button><div class="result" id="savings-result"></div>`;document.getElementById("deposit").innerHTML=`<h2>예금 계산기</h2><div class="form-group"><label for="deposit-principal">예치 금액 (원)</label><input type="number" id="deposit-principal" placeholder="예: 10000000"></div><div class="form-group"><label for="deposit-period">예치 기간 (개월)</label><input type="number" id="deposit-period" placeholder="예: 12"></div><div class="form-group"><label for="deposit-rate">연 이자율 (%)</label><input type="number" id="deposit-rate" placeholder="예: 3.5"></div><div class="form-group"><label for="deposit-interest-type">이자 계산 방식</label><select id="deposit-interest-type"><option value="simple">단리</option><option value="compound">월 복리</option></select></div><div class="form-group"><label for="deposit-tax">이자 과세</label><select id="deposit-tax"><option value="general">일반과세 (15.4%)</option><option value="exempt">비과세 (0%)</option></select></div><button onclick="calculateDeposit()">계산하기</button><div class="result" id="deposit-result"></div>`;document.getElementById("loan").innerHTML=`<h2>대출한도 계산기</h2><div class="sub-tab-nav"><button class="sub-tab-button" onclick="openLoanTab(event, 'dsr-calc')">DSR 기준</button><button class="sub-tab-button" onclick="openLoanTab(event, 'dti-calc')">DTI 기준</button><button class="sub-tab-button" onclick="openLoanTab(event, 'ltv-calc')">LTV 기준</button></div><div id="dsr-calc" class="sub-tab-panel"><div class="form-group"><label for="annual-income-dsr">연 소득 (원)</label><input type="number" id="annual-income-dsr" placeholder="예: 50000000"></div><div class="form-group"><label for="dsr-rate">적용 DSR (%)</label><input type="number" id="dsr-rate" value="40"><small>DSR(총부채원리금상환비율): 연소득 대비 모든 대출의 연 원리금 상환액 비율. 보통 40%가 적용됩니다.</small></div><div class="form-group"><label for="other-debt-payment-dsr">기타 부채 연간 <strong style="color:red">원리금</strong> 상환액 (원)</label><input type="number" id="other-debt-payment-dsr" placeholder="없으면 0 입력" value="0"></div><div class="form-group"><label for="loan-term-dsr">대출 기간 (년)</label><input type="number" id="loan-term-dsr" placeholder="예: 30"></div><div class="form-group"><label for="loan-interest-rate-dsr">예상 연 이자율 (%)</label><input type="number" id="loan-interest-rate-dsr" placeholder="예: 4.5"></div><button onclick="calculateDsrLimit()">DSR 한도 계산</button><div class="result" id="dsr-limit-result"></div></div><div id="dti-calc" class="sub-tab-panel"><div class="form-group"><label for="annual-income-dti">연 소득 (원)</label><input type="number" id="annual-income-dti" placeholder="예: 50000000"></div><div class="form-group"><label for="dti-rate">적용 DTI (%)</label><input type="number" id="dti-rate" value="60"><small>DTI(총부채상환비율): 연소득 대비 '신규 대출 원리금'과 '기존 대출 이자' 상환액 비율.</small></div><div class="form-group"><label for="other-debt-payment-dti">기타 부채 연간 <strong style="color:red">이자</strong> 상환액 (원)</label><input type="number" id="other-debt-payment-dti" placeholder="없으면 0 입력" value="0"></div><div class="form-group"><label for="loan-term-dti">대출 기간 (년)</label><input type="number" id="loan-term-dti" placeholder="예: 30"></div><div class="form-group"><label for="loan-interest-rate-dti">예상 연 이자율 (%)</label><input type="number" id="loan-interest-rate-dti" placeholder="예: 4.5"></div><button onclick="calculateDtiLimit()">DTI 한도 계산</button><div class="result" id="dti-limit-result"></div></div><div id="ltv-calc" class="sub-tab-panel"><div class="form-group"><label for="property-value">주택 시세 (원)</label><input type="number" id="property-value" placeholder="예: 600000000"></div><div class="form-group"><label for="ltv-rate">적용 LTV (%)</label><input type="number" id="ltv-rate" value="70"><small>LTV(주택담보대출비율): 주택 시세 대비 대출금액의 비율.</small></div><button onclick="calculateLtvLimit()">LTV 한도 계산</button><div class="result" id="ltv-limit-result"></div></div><div class="final-info"><strong>최종 대출 가능 한도란?</strong><br>실제 대출 한도는 DSR, DTI, LTV 등 여러 규제에 따라 계산된 한도 중 <strong>가장 낮은 금액</strong>으로 결정됩니다. 각 기준에 따른 한도를 모두 확인해보세요.</div>`;document.getElementById("value").innerHTML=`<div class="calculator" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0;"><h2>과거가치 → 현재가치</h2><div class="form-group"><label for="past-value">과거 금액 (원):</label><input type="number" id="past-value" placeholder="예: 10000000"></div><div class="form-group"><label for="inflation-rate-ptp">연평균 물가상승률 (%):</label><input type="number" id="inflation-rate-ptp" placeholder="예: 3"></div><div class="form-group"><label for="years-ptp">기간 (몇 년 전):</label><input type="number" id="years-ptp" placeholder="예: 20"></div><button onclick="calculatePastToPresent()">계산하기</button><div class="result" id="past-to-present-result"></div></div><div class="calculator" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0;"><h2>현재가치 → 과거가치</h2><div class="form-group"><label for="current-value-to-past">현재 금액 (원):</label><input type="number" id="current-value-to-past" placeholder="예: 100000000"></div><div class="form-group"><label for="inflation-rate-ctp">연평균 물가상승률 (%):</label><input type="number" id="inflation-rate-ctp" placeholder="예: 3"></div><div class="form-group"><label for="years-ctp">기간 (몇 년 전):</label><input type="number" id="years-ctp" placeholder="예: 20"></div><button onclick="calculateCurrentToPast()">계산하기</button><div class="result" id="current-to-past-result"></div></div><div class="calculator" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0;"><h2>현재가치 → 미래가치</h2><div class="form-group"><label for="current-value-to-future">현재 금액 (원):</label><input type="number" id="current-value-to-future" placeholder="예: 10000000"></div><div class="form-group"><label for="inflation-rate-fv">연평균 물가상승률 (%):</label><input type="number" id="inflation-rate-fv" placeholder="예: 2.5"></div><div class="form-group"><label for="years-fv">기간 (몇 년 후):</label><input type="number" id="years-fv" placeholder="예: 10"></div><button onclick="calculateFutureValue()">계산하기</button><div class="result" id="future-value-result"></div></div><div class="calculator"><h2>미래가치 → 현재가치</h2><div class="form-group"><label for="future-value">미래 금액 (원):</label><input type="number" id="future-value" placeholder="예: 10000000"></div><div class="form-group"><label for="inflation-rate-pv">연평균 물가상승률 (%):</label><input type="number" id="inflation-rate-pv" placeholder="예: 2.5"></div><div class="form-group"><label for="years-pv">기간 (몇 년 후):</label><input type="number" id="years-pv" placeholder="예: 10"></div><button onclick="calculatePresentValue()">계산하기</button><div class="result" id="present-value-result"></div></div>`;}
+    function calculateRetirement(){const e=parseInt(document.getElementById("current-age").value),t=parseInt(document.getElementById("retirement-age").value),n=parseInt(document.getElementById("life-expectancy").value),l=parseFloat(document.getElementById("monthly-living-cost").value),a=parseFloat(document.getElementById("current-assets").value),o=parseFloat(document.getElementById("annual-savings").value),r=parseFloat(document.getElementById("investment-return-rate").value)/100,s=parseFloat(document.getElementById("inflation-rate").value)/100,c=document.getElementById("retirement-result");if([e,t,n,l,a,o,r,s].some(isNaN)||e<0||t<=e||n<=t||l<=0)return void(c.innerHTML=ERROR_MESSAGE);const i=t-e,u=n-t,d=a*Math.pow(1+r,i),m=0===r?o*i:o*(Math.pow(1+r,i)-1)/r,p=d+m,g=l*Math.pow(1+s,i),f=12*g,h=(1+r)/(1+s)-1;let y;y=0===h?f*u:f*(1-Math.pow(1+h,-u))/h;const v=y-p;let b=`\n            은퇴 시점 월 생활비 (물가 반영): <strong>약 ${formatNumber(g)}원</strong><br>\n            은퇴 후 총 필요 자금: <strong>약 ${formatNumber(y)}원</strong><br>\n            <hr style="border:0; border-top: 1px dashed #ccc; margin: 10px 0;">\n            은퇴 시점 예상 총 자산: <strong>약 ${formatNumber(p)}원</strong>\n        `;b+=v>0?`<div class="final-result shortfall">예상 은퇴자금이 <strong>약 ${formatNumber(v)}원</strong> 부족합니다.</div>`:`<div class="final-result surplus">예상 은퇴자금이 <strong>약 ${formatNumber(Math.abs(v))}원</strong> 여유롭습니다.</div>`,c.innerHTML=b}
+    function calculateSeverance(){const e=new Date(document.getElementById("start-date").value),t=new Date(document.getElementById("end-date").value),n=parseFloat(document.getElementById("current-salary").value),l=parseFloat(document.getElementById("salary-increase-rate-sev").value)/100,a=parseInt(document.getElementById("unused-leave-days").value),o=parseFloat(document.getElementById("dc-return-rate").value)/100,r=document.getElementById("severance-result");if(isNaN(e)||isNaN(t)||isNaN(n)||isNaN(l)||isNaN(a)||isNaN(o)||t<=e)return void(r.innerHTML=ERROR_MESSAGE);const s=(t-e)/864e5,c=s/365.25,i=t.getFullYear()-(new Date).getFullYear(),u=n*Math.pow(1+l,i>0?i:0),d=u/365,m=d*a,p=u/4,g=(p+m/4)/91.25,f=30*g*s/365;let h=0;const y=t.getFullYear()-(new Date).getFullYear();y>0&&(h=l===o?n/12*y*Math.pow(1+o,y-1):n/12*(Math.pow(1+o,y)-Math.pow(1+l,y))/(o-l)),r.innerHTML=`\n            <div class="result-section">\n                <strong>DB형 (확정급여형) 예상 퇴직금</strong>\n                <small>퇴직 직전 3개월 평균임금 기준으로 계산</small>\n                <hr style="border:0; border-top: 1px dashed #ccc; margin: 10px 0;">\n                예상 근속 기간: <strong>${Math.floor(c)}년 ${Math.floor(s%365.25)}일</strong><br>\n                퇴직 시점 예상 연봉: <strong>약 ${formatNumber(u)}원</strong><br>\n                추산 1일 평균임금: <strong>약 ${formatNumber(g)}원</strong><br>\n                <p style="font-size:1.2em; font-weight:bold; margin-top:10px;">예상 퇴직금: <strong>${formatNumber(f)}원</strong></p>\n            </div>\n            <div class="result-section">\n                 <strong>DC형 (확정기여형) 예상 적립금</strong>\n                <small>매년 연봉의 1/12을 적립, 투자수익률 적용</small>\n                 <hr style="border:0; border-top: 1px dashed #ccc; margin: 10px 0;">\n                 <p style="font-size:1.2em; font-weight:bold; margin-top:10px;">예상 총 적립금: <strong>${formatNumber(h)}원</strong></p>\n                 <small>* 현재까지의 적립금은 제외된 미래 예상 적립금입니다. 미사용 연차수당은 DC형 적립금과 무관합니다.</small>\n            </div>\n            <div class="final-info" style="margin-top:20px;">\n                <strong>참고:</strong> 위 금액은 세전 기준이며, 실제와 차이가 있을 수 있습니다. DB형은 법적 기준에 따른 추정치이며, DC형은 투자 수익률에 따라 변동성이 큽니다.\n            </div>\n        `}
+    function calculateSavings(){const e=parseFloat(document.getElementById("monthly-deposit").value),t=parseInt(document.getElementById("savings-period").value),n=parseFloat(document.getElementById("savings-rate").value),l=document.getElementById("savings-tax").value,a=document.getElementById("savings-result");if(isNaN(e)||isNaN(t)||isNaN(n)||e<=0||t<=0||n<0)return void(a.innerHTML=ERROR_MESSAGE);let o=0;for(let l=1;l<=t;l++)o+=e*(n/100)*(t-l+1)/12;const r=e*t,s="general"===l?o*TAX_RATE:0,c=r+o-s;a.innerHTML=`\n            총 원금: <strong>${formatNumber(r)}원</strong><br>\n            이자 (세전): <strong>${formatNumber(o)}원</strong><br>\n            이자과세 (${"general"===l?"15.4%":"0%"}): <strong>-${formatNumber(s)}원</strong><br>\n            <hr style="border: 0; border-top: 1px solid #ccc; margin: 10px 0;">\n            만기 수령액: <strong>${formatNumber(c)}원</strong>\n        `}
+    function calculateDeposit(){const e=parseFloat(document.getElementById("deposit-principal").value),t=parseInt(document.getElementById("deposit-period").value),n=parseFloat(document.getElementById("deposit-rate").value),l=document.getElementById("deposit-interest-type").value,a=document.getElementById("deposit-tax").value,o=document.getElementById("deposit-result");if(isNaN(e)||isNaN(t)||isNaN(n)||e<=0||t<=0||n<0)return void(o.innerHTML=ERROR_MESSAGE);let r=0;r="simple"===l?e*(1+n/100*t/12):e*Math.pow(1+n/100/12,t);const s=r-e,c="general"===a?s*TAX_RATE:0,i=e+s-c;o.innerHTML=`\n            원금: <strong>${formatNumber(e)}원</strong><br>\n            이자 (세전, ${"simple"===l?"단리":"월복리"}): <strong>${formatNumber(s)}원</strong><br>\n            이자과세 (${"general"===a?"15.4%":"0%"}): <strong>-${formatNumber(c)}원</strong><br>\n            <hr style="border: 0; border-top: 1px solid #ccc; margin: 10px 0;">\n            만기 수령액: <strong>${formatNumber(i)}원</strong>\n        `}
+    function calculateDsrLimit(){const e=parseFloat(document.getElementById("annual-income-dsr").value),t=parseFloat(document.getElementById("dsr-rate").value),n=parseFloat(document.getElementById("other-debt-payment-dsr").value),l=parseInt(document.getElementById("loan-term-dsr").value),a=parseFloat(document.getElementById("loan-interest-rate-dsr").value),o=document.getElementById("dsr-limit-result");if(isNaN(e)||isNaN(t)||isNaN(l)||isNaN(a))return void(o.innerHTML=ERROR_MESSAGE);const r=(e*t/100-n)/12;if(r<=0)return void(o.innerHTML="연 소득 대비 기존 부채가 많아 추가 대출이 어렵습니다.");const s=reverseCalculatePrincipal(r,a,l);o.innerHTML=`DSR 기준 예상 최대 대출한도:<br><strong>${formatNumber(s)}원</strong>`}
+    function calculateDtiLimit(){const e=parseFloat(document.getElementById("annual-income-dti").value),t=parseFloat(document.getElementById("dti-rate").value),n=parseFloat(document.getElementById("other-debt-payment-dti").value),l=parseInt(document.getElementById("loan-term-dti").value),a=parseFloat(document.getElementById("loan-interest-rate-dti").value),o=document.getElementById("dti-limit-result");if(isNaN(e)||isNaN(t)||isNaN(l)||isNaN(a))return void(o.innerHTML=ERROR_MESSAGE);const r=(e*t/100-n)/12;if(r<=0)return void(o.innerHTML="연 소득 대비 기존 부채의 이자가 많아 추가 대출이 어렵습니다.");const s=reverseCalculatePrincipal(r,a,l);o.innerHTML=`DTI 기준 예상 최대 대출한도:<br><strong>${formatNumber(s)}원</strong>`}
+    function calculateLtvLimit(){const e=parseFloat(document.getElementById("property-value").value),t=parseFloat(document.getElementById("ltv-rate").value),n=document.getElementById("ltv-limit-result");if(isNaN(e)||isNaN(t)||e<=0||t<=0)return void(n.innerHTML=ERROR_MESSAGE);const l=e*t/100;n.innerHTML=`LTV 기준 예상 최대 대출한도:<br><strong>${formatNumber(l)}원</strong>`}
+    function reverseCalculatePrincipal(e,t,n){const l=t/100/12,a=12*n;return 0===l?e*a:e*(Math.pow(1+l,a)-1)/(l*Math.pow(1+l,a))}
+    function calculatePastToPresent(){const e=parseFloat(document.getElementById("past-value").value),t=parseFloat(document.getElementById("inflation-rate-ptp").value),n=parseFloat(document.getElementById("years-ptp").value),l=document.getElementById("past-to-present-result");if(isNaN(e)||isNaN(t)||isNaN(n)||e<=0||t<0||n<=0)return void(l.innerText=ERROR_MESSAGE);const a=e*Math.pow(1+t/100,n);l.innerHTML=`${n}년 전 <strong>${formatNumber(e)}원</strong>의 현재가치는 약 <strong>${formatNumber(a)}원</strong> 입니다.`}
+    function calculateCurrentToPast(){const e=parseFloat(document.getElementById("current-value-to-past").value),t=parseFloat(document.getElementById("inflation-rate-ctp").value),n=parseFloat(document.getElementById("years-ctp").value),l=document.getElementById("current-to-past-result");if(isNaN(e)||isNaN(t)||isNaN(n)||e<=0||t<0||n<=0)return void(l.innerText=ERROR_MESSAGE);const a=e/Math.pow(1+t/100,n);l.innerHTML=`현재 <strong>${formatNumber(e)}원</strong>의 ${n}년 전 가치는 약 <strong>${formatNumber(a)}원</strong> 입니다.`}
+    function calculateFutureValue(){const e=parseFloat(document.getElementById("current-value-to-future").value),t=parseFloat(document.getElementById("inflation-rate-fv").value),n=parseFloat(document.getElementById("years-fv").value),l=document.getElementById("future-value-result");if(isNaN(e)||isNaN(t)||isNaN(n)||e<=0||t<0||n<=0)return void(l.innerText=ERROR_MESSAGE);const a=e*Math.pow(1+t/100,n);l.innerHTML=`${n}년 후 현재 <strong>${formatNumber(e)}원</strong>의 미래가치는 약 <strong>${formatNumber(a)}원</strong> 입니다.`}
+    function calculatePresentValue(){const e=parseFloat(document.getElementById("future-value").value),t=parseFloat(document.getElementById("inflation-rate-pv").value),n=parseFloat(document.getElementById("years-pv").value),l=document.getElementById("present-value-result");if(isNaN(e)||isNaN(t)||isNaN(n)||e<=0||t<0||n<=0)return void(l.innerText=ERROR_MESSAGE);const a=e/Math.pow(1+t/100,n);l.innerHTML=`${n}년 후 <strong>${formatNumber(e)}원</strong>의 현재가치는 약 <strong>${formatNumber(a)}원</strong> 입니다.`}
+</script>
+
+</body>
+</html>
